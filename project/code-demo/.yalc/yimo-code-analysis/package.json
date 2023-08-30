@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "bin": {
-    "yimo-ca": "./bin/cli.mjs"
+    "yimo-ca": "./bin/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,5 +17,5 @@
     "commander": "^11.0.0",
     "typescript": "^5.2.2"
   },
-  "yalcSig": "fe7c45b9c9819c0fe71d30af45a32184"
+  "yalcSig": "e085724a337c43326a51c5a74aba26fa"
 }

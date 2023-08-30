@@ -11,9 +11,9 @@
  * 6. 遍历结束，依次执行插件队列中的后置Hook
  * 7. 所有文件分析结束后标记黑名单API，整理并返回分析结果
  */
-const tsCompiler = require("typescript");
+import tsCompiler from "typescript";
 
-class CodeAnalysis {
+export default class CodeAnalysis {
   constructor(options) {
     // 私有属性
 
@@ -223,14 +223,11 @@ class CodeAnalysis {
   }
 
   // 入口函数
-  analysis(){
+  analysis() {
     // 扫码分析TS
-    
   }
 
   log() {
     console.log(this.importItemMap);
   }
 }
-
-module.exports = CodeAnalysis;

@@ -1,11 +1,11 @@
 {
-  "name": "yimo-code-analysis",
+  "name": "yimo-ca",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "yimo-ca": "./bin/cli.js"
+    "yimo": "./bin/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
