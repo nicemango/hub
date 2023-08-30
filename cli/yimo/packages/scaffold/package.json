@@ -22,5 +22,8 @@
   },
   "bugs": {
     "url": "https://github.com/nicemango/hub/issues"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0"
   }
 }
