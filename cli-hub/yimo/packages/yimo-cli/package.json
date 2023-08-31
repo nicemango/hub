@@ -1,0 +1,34 @@
+{
+  "name": "yimo-cli",
+  "version": "0.0.1",
+  "description": "> TODO: description",
+  "author": "zhongzihuan <zhongzihuan@njsdata.com>",
+  "homepage": "https://github.com/nicemango/hub#readme",
+  "license": "ISC",
+  "main": "lib/yimo-cli.js",
+  "type": "module",
+  "bin": {
+    "yimo": "./bin/cli.js"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicemango/hub.git"
+  },
+  "scripts": {
+    "test": "node ./__tests__/yimo-cli.test.js"
+  },
+  "bugs": {
+    "url": "https://github.com/nicemango/hub/issues"
+  },
+  "dependencies": {
+    "yimo-ca": "^0.0.1",
+    "yimo-scaffold": "^0.0.1"
+  }
+}

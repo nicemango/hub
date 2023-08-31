@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "yimo-cli": {
+      "signature": "6fceaf519953002133c70f81f4d64bb5",
+      "file": true
+    }
+  }
+}
