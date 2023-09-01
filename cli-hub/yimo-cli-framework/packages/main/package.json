@@ -28,8 +28,8 @@
     "url": "https://github.com/nicemango/hub/issues"
   },
   "dependencies": {
-    "@yimocli/init": "0.0.1",
-    "@yimocli/common": "0.0.1",
+    "@yimocli/common": "^0.0.1",
+    "@yimocli/init": "^0.0.1",
     "chalk": "^5.1.0",
     "commander": "^9.4.1",
     "dirname-filename-esm": "^1.1.1",
