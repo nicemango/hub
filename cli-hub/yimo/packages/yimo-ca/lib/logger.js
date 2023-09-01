@@ -10,7 +10,7 @@ const LOG_PATH = path.join(rootDir, "./log/local.json");
 console.log("LOG_PATH", LOG_PATH);
 const Logger = {
   local: (content) => {
-    fs.writeFileSync(LOG_PATH, content);
+    fs.writeFileSync(LOG_PATH, content, { flag: "a" });
   },
 };
 

@@ -1,0 +1,40 @@
+{
+  "name": "@yimocli/main",
+  "version": "0.0.1",
+  "description": "> TODO: description",
+  "author": "zhongzihuan <zhongzihuan@njsdata.com>",
+  "homepage": "https://github.com/nicemango/hub#readme",
+  "license": "ISC",
+  "main": "lib/main.js",
+  "type": "module",
+  "bin": {
+    "@yimocli": "./bin/cli.js"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicemango/hub.git"
+  },
+  "scripts": {
+    "test": "node ./__tests__/main.test.js"
+  },
+  "bugs": {
+    "url": "https://github.com/nicemango/hub/issues"
+  },
+  "dependencies": {
+    "@yimocli/init": "0.0.1",
+    "@yimocli/common": "0.0.1",
+    "chalk": "^5.1.0",
+    "commander": "^9.4.1",
+    "dirname-filename-esm": "^1.1.1",
+    "fs-extra": "^10.1.0",
+    "import-local": "^3.1.0",
+    "semver": "^7.3.8"
+  }
+}

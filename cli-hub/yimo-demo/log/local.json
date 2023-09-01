@@ -1,6 +1,16 @@
 [
   {
     "name": "yimo-demo",
-    "parse": ["/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/index.ts"]
+    "parse": [
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/api/index.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/api/types.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/api/users.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/message.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/router/index.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/services/connect.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/store/index.ts",
+      "/Users/zhongzihuan/hub/cli-hub/yimo-demo/src/store/types.ts"
+    ]
   }
 ]
+[object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object][object Object]

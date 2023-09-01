@@ -15,14 +15,29 @@ import tsCompiler from "typescript";
 import Constant from "./constant.js";
 import { scanFileTs } from "./file.js";
 import Logger from "./logger.js";
+import { parseTs } from "./parse.js";
+import methodPlugin from "../plugins/methodPlugin.js";
 
 export default class CodeAnalysis {
   constructor(config) {
     // 私有属性
     this._configScanSource = config.scanSource;
+    this._configAnalysisPlugins = config.analysisPlugins || []; //代码分析插件配置
 
     // 公共属性
+    this.pluginsQueue = []; //Target分析插件队列
     this.importItemMap = {}; //importItem统计Mao
+  }
+
+  //注册插件
+  _installPlugins(configAnalysisPlugins) {
+    if (configAnalysisPlugins.length > 0) {
+      configAnalysisPlugins.forEach((item) => {
+        this.pluginsQueue.push(item(this));
+      });
+    }
+
+    this.pluginsQueue.push(methodPlugin(this)); //安装method判断插件
   }
 
   /**
@@ -139,7 +154,7 @@ export default class CodeAnalysis {
     if (index > 0) {
       apiName = apiName + "." + node.name.escapedText;
     } else {
-      apiName = apiName + node.name.escapedText;
+      apiName = apiName + node.escapedText;
     }
     if (tsCompiler.isPropertyAccessExpression(node)) {
       index++;
@@ -153,20 +168,68 @@ export default class CodeAnalysis {
     }
   }
 
+  //执行Target分析插件队列中的checkFun函数
+  _runAnalysisPlugins(
+    tsCompiler,
+    baseNode,
+    depth,
+    apiName,
+    matchImportItem,
+    filePath,
+    projectName,
+    httpRepo,
+    line
+  ) {
+    if (this.pluginsQueue.length > 0) {
+      this.pluginsQueue.forEach((item) => {
+        const checkFun = item.checkFun;
+        if (
+          checkFun({
+            ctx: this,
+            tsCompiler,
+            baseNode,
+            depth,
+            apiName,
+            matchImportItem,
+            filePath,
+            projectName,
+            httpRepo,
+            line,
+          })
+        ) {
+        }
+      });
+    }
+  }
+
   /**
-   *
-   * @param {*} ImportItems  Import节点分析的结果Map
-   * @param {*} ast 代码文件解析后的ast
-   * @param {*} checker 编译代码文件时创建的checker
+   * AST分析
+   * @param {*} importItems  Import节点分析的结果Map
+   * @param {*} ast  代码文件解析后的ast
+   * @param {*} checker  编译代码文件时创建的checker
+   * @param {*} filePath
+   * @param {*} projectName
+   * @param {*} httpRepo
    * @param {*} baseLine
    */
-  _dealAST(ImportItems, ast, checker, baseLine = 0) {
+  _dealAST(
+    importItems,
+    ast,
+    checker,
+    filePath,
+    projectName,
+    httpRepo,
+    baseLine = 0
+  ) {
+    let that = this;
     // 获取所有API信息名称
-    const ImportItemsNames = Object.keys(ImportItems);
+    const ImportItemsNames = Object.keys(importItems);
 
     // 遍历AST
     function walk(node) {
       tsCompiler.forEachChild(node, walk);
+      const line =
+        ast.getLineAndCharacterOfPosition(node.getStart()).line + baseLine + 1;
 
       // 判定当前遍历的节点是否为isIdentifier类型节点
       // 判断从Import导入的API中是否存在与当前遍历节点名称相同的API
@@ -177,7 +240,7 @@ export default class CodeAnalysis {
         ImportItemsNames.includes(node.escapedText)
       ) {
         // 过滤掉不相干的Identifier节点后
-        const matchImportItem = ImportItems[node.escapedText];
+        const matchImportItem = importItems[node.escapedText];
         if (
           node.pos != matchImportItem.identifierPos &&
           node.end != matchImportItem.identifierEnd
@@ -196,6 +259,9 @@ export default class CodeAnalysis {
                 // 获取基础分析节点信息
                 const { baseNode, depth, apiName } =
                   that._checkPropertyAccess(node);
+                //执行分析插件
+                that._runAn;
+                console.log({ depth, apiName });
               } else {
                 // Identifier节点没有父节点，说明AST节点语义异常，不存在分析意义
               }
@@ -247,9 +313,35 @@ export default class CodeAnalysis {
   _scanCode(configScanSource, type) {
     // 扫描所有需要分析的代码文件
     const entrys = this._scanFiles(configScanSource, type);
-    console.log("打印", typeof entrys);
 
-    Logger.local(JSON.stringify(entrys));
+    entrys.forEach((item) => {
+      const parseFileArr = item.parse;
+      if (parseFileArr.length > 0) {
+        parseFileArr.forEach((element, index) => {
+          const showPath = item.name + "&" + element;
+          try {
+            if (type === Constant.CODE_FILE_TYPE.TS) {
+              const { ast, checker } = parseTs(element);
+
+              const importItems = this._findImportItems(ast, showPath);
+
+              if (Object.keys(importItems).length > 0) {
+                this._dealAST(
+                  importItems,
+                  ast,
+                  checker,
+                  showPath,
+                  item.name,
+                  item.httpRepo
+                );
+              }
+            }
+          } catch (error) {
+            console.log("解析错误", error);
+          }
+        });
+      }
+    });
 
     fs.writeFile();
   }
@@ -257,6 +349,7 @@ export default class CodeAnalysis {
   // 入口函数
   analysis() {
     // 注册插件
+    this._installPlugins(_configAnalysisPlugins);
 
     // 扫描分析vue
 

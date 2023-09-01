@@ -1,7 +1,7 @@
-const path = require("path");
-const tsCompiler = require("typescript");
+import path from "path";
+import tsCompiler from "typescript";
 
-exports.parseTs = function (fileName) {
+export const parseTs =  (fileName)=> {
   // 将ts代码转换为ast
   const program = tsCompiler.createProgram([fileName], {});
   const ast = program.getSourceFile(fileName);
