@@ -32,5 +32,6 @@
     "npmlog": "^6.0.2",
     "path-exists": "^5.0.0",
     "url-join": "^5.0.0"
-  }
+  },
+  "gitHead": "444573846a040072684b4df27cc37f9ddd7b364f"
 }

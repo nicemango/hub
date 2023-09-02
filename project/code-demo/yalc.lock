@@ -1,9 +1,0 @@
-{
-  "version": "v1",
-  "packages": {
-    "yimo-code-analysis": {
-      "signature": "e085724a337c43326a51c5a74aba26fa",
-      "file": true
-    }
-  }
-}

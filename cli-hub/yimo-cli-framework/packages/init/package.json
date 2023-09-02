@@ -27,5 +27,6 @@
   "dependencies": {
     "@yimocli/common": "^0.0.1",
     "chalk": "^5.1.0"
-  }
+  },
+  "gitHead": "444573846a040072684b4df27cc37f9ddd7b364f"
 }

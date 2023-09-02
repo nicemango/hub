@@ -27,6 +27,8 @@ export default class CodeAnalysis {
     // 公共属性
     this.pluginsQueue = []; //Target分析插件队列
     this.importItemMap = {}; //importItem统计Mao
+
+    this.diagnosisInfos = []; //诊断日志信息
   }
 
   //注册插件
@@ -181,13 +183,13 @@ export default class CodeAnalysis {
     line
   ) {
     if (this.pluginsQueue.length > 0) {
-      this.pluginsQueue.forEach((item) => {
-        const checkFun = item.checkFun;
+      for (let index = 0; index < this.pluginsQueue.length; index++) {
+        const checkFun = this.pluginsQueue[index].checkFun;
         if (
           checkFun({
-            ctx: this,
+            context: this,
             tsCompiler,
-            baseNode,
+            node: baseNode,
             depth,
             apiName,
             matchImportItem,
@@ -197,8 +199,9 @@ export default class CodeAnalysis {
             line,
           })
         ) {
+          break;
         }
-      });
+      }
     }
   }
 
@@ -259,9 +262,19 @@ export default class CodeAnalysis {
                 // 获取基础分析节点信息
                 const { baseNode, depth, apiName } =
                   that._checkPropertyAccess(node);
+
                 //执行分析插件
-                that._runAn;
-                console.log({ depth, apiName });
+                that._runAnalysisPlugins(
+                  tsCompiler,
+                  baseNode,
+                  depth,
+                  apiName,
+                  matchImportItem,
+                  filePath,
+                  projectName,
+                  httpRepo,
+                  line
+                );
               } else {
                 // Identifier节点没有父节点，说明AST节点语义异常，不存在分析意义
               }
@@ -346,13 +359,16 @@ export default class CodeAnalysis {
     fs.writeFile();
   }
 
+  //记录诊断日志
+  addDiagnosisInfo(info) {
+    this.diagnosisInfos.push(info);
+  }
+
   // 入口函数
   analysis() {
     // 注册插件
-    this._installPlugins(_configAnalysisPlugins);
-
+    this._installPlugins(this._configAnalysisPlugins);
     // 扫描分析vue
-
     // 扫描分析TS
     this._scanCode(this._configScanSource, Constant.CODE_FILE_TYPE.TS);
   }

@@ -36,5 +36,6 @@
     "fs-extra": "^10.1.0",
     "import-local": "^3.1.0",
     "semver": "^7.3.8"
-  }
+  },
+  "gitHead": "444573846a040072684b4df27cc37f9ddd7b364f"
 }
