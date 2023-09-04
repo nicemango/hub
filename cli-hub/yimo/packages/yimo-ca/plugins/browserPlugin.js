@@ -1,5 +1,6 @@
-const defaultPlugin = () => {
-  const mapName = "apiMap";
+const browserPlugin = (analysisContext) => {
+  const mapName = "browserMap";
+  analysisContext[mapName] = {};
 
   const checkFun = (params) => {
     const {
@@ -15,6 +16,7 @@ const defaultPlugin = () => {
       line,
     } = params;
     try {
+      console.log("zzzzzz", context[mapName]);
       if (!context[mapName][apiName]) {
         context[mapName][apiName] = {};
         context[mapName][apiName].callNum = 1;
@@ -40,9 +42,10 @@ const defaultPlugin = () => {
           context[mapName][apiName].callFiles[filePath].lines.push(line);
         }
       }
+
       return true; // true: 命中规则, 终止执行后序插件
     } catch (e) {
-      // console.log(e);
+      console.log("报错了", e.message);
       const info = {
         projectName: projectName,
         apiName: apiName,
@@ -61,8 +64,10 @@ const defaultPlugin = () => {
   return {
     mapName: mapName,
     checkFun,
-    afterHook: null,
+    afterHook: (ctx) => {
+      console.log("打印:", ctx[mapName]);
+    },
   };
 };
 
-export default defaultPlugin;
+export default browserPlugin;

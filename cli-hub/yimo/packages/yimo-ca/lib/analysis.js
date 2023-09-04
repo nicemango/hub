@@ -13,20 +13,26 @@
  */
 import tsCompiler from "typescript";
 import Constant from "./constant.js";
-import { scanFileTs } from "./file.js";
+import { scanFile, scanFileJS, scanFileTs } from "./file.js";
 import Logger from "./logger.js";
 import { parseTs } from "./parse.js";
 import methodPlugin from "../plugins/methodPlugin.js";
+import browserPlugin from "../plugins/browserPlugin.js";
+import typePlugin from "../plugins/typePlugin.js";
+import defaultPlugin from "../plugins/defaultPlugin.js";
 
 export default class CodeAnalysis {
   constructor(config) {
     // 私有属性
     this._configScanSource = config.scanSource;
     this._configAnalysisPlugins = config.analysisPlugins || []; //代码分析插件配置
+    this._configAnalysisTarget = config.analysisTarget; // 要分析的目标依赖配置
+    this._configBrowserApis = config.browserApis; // 需要分析的BrowserApi配置
 
     // 公共属性
     this.pluginsQueue = []; //Target分析插件队列
-    this.importItemMap = {}; //importItem统计Mao
+    this.browserQueue = []; // Browser分析插件队列
+    this.importItemMap = {}; //importItem统计集合
 
     this.diagnosisInfos = []; //诊断日志信息
   }
@@ -40,6 +46,12 @@ export default class CodeAnalysis {
     }
 
     this.pluginsQueue.push(methodPlugin(this)); //安装method判断插件
+    this.pluginsQueue.push(typePlugin(this));
+    this.pluginsQueue.push(defaultPlugin(this));
+
+    if (this._configBrowserApis.length > 0) {
+      this.browserQueue.push(browserPlugin(this)); // install browserPlugin
+    }
   }
 
   /**
@@ -78,7 +90,10 @@ export default class CodeAnalysis {
       const line =
         ast.getLineAndCharacterOfPosition(node.getStart()).line + baseLine + 1;
       // 分析引入情况
-      if (tsCompiler.isImportDeclaration(node)) {
+      if (
+        tsCompiler.isImportDeclaration(node) &&
+        node?.moduleSpecifier?.text === that._configAnalysisTarget
+      ) {
         // 存在导入项
         if (node.importClause) {
           // default直接引入场景
@@ -205,6 +220,79 @@ export default class CodeAnalysis {
     }
   }
 
+  // 执行Browser分析插件队列中的检测函数
+  _runBrowserPlugins(
+    tsCompiler,
+    baseNode,
+    depth,
+    apiName,
+    filePath,
+    projectName,
+    httpRepo,
+    line
+  ) {
+    if (this.browserQueue.length > 0) {
+      for (let i = 0; i < this.browserQueue.length; i++) {
+        const checkFun = this.browserQueue[i].checkFun;
+        console.log("zzh 执行");
+        if (
+          checkFun({
+            context: this,
+            tsCompiler,
+            node: baseNode,
+            depth,
+            apiName,
+            filePath,
+            projectName,
+            httpRepo,
+            line,
+          })
+        ) {
+          break;
+        }
+      }
+    }
+  }
+
+  // 执行Target分析插件队列中的afterHook函数
+  _runAnalysisPluginsHook(
+    importItems,
+    ast,
+    checker,
+    filePath,
+    projectName,
+    httpRepo,
+    baseLine
+  ) {
+    if (this.pluginsQueue.length > 0) {
+      for (let index = 0; index < this.pluginsQueue.length; index++) {
+        const afterHook = this.pluginsQueue[index].afterHook;
+        if (afterHook && typeof afterHook === "function") {
+          afterHook(
+            this,
+            this.pluginsQueue[i].mapName,
+            importItems,
+            ast,
+            checker,
+            filePath,
+            projectName,
+            httpRepo,
+            baseLine
+          );
+        }
+      }
+    }
+
+    if (this.browserQueue.length > 0) {
+      for (let index = 0; index < this.browserQueue.length; index++) {
+        const afterHook = this.browserQueue[index].afterHook;
+        if (afterHook && typeof afterHook === "function") {
+          afterHook(this);
+        }
+      }
+    }
+  }
+
   /**
    * AST分析
    * @param {*} importItems  Import节点分析的结果Map
@@ -224,6 +312,7 @@ export default class CodeAnalysis {
     httpRepo,
     baseLine = 0
   ) {
+    // console.log("收集到的API信息", importItems);
     let that = this;
     // 获取所有API信息名称
     const ImportItemsNames = Object.keys(importItems);
@@ -234,6 +323,7 @@ export default class CodeAnalysis {
       const line =
         ast.getLineAndCharacterOfPosition(node.getStart()).line + baseLine + 1;
 
+      // target analysis
       // 判定当前遍历的节点是否为isIdentifier类型节点
       // 判断从Import导入的API中是否存在与当前遍历节点名称相同的API
       if (
@@ -263,6 +353,8 @@ export default class CodeAnalysis {
                 const { baseNode, depth, apiName } =
                   that._checkPropertyAccess(node);
 
+                // console.log("基础节点", baseNode);
+
                 //执行分析插件
                 that._runAnalysisPlugins(
                   tsCompiler,
@@ -284,8 +376,62 @@ export default class CodeAnalysis {
           }
         }
       }
+      // browser analysis
+      if (
+        tsCompiler.isIdentifier(node) &&
+        node.escapedText &&
+        that._configBrowserApis.length > 0 &&
+        that._configBrowserApis.includes(node.escapedText)
+      ) {
+        // 命中Browser Api Item Name
+        const symbol = checker.getSymbolAtLocation(node);
+        // console.log(symbol);
+        if (symbol && symbol.declarations) {
+          if (
+            symbol.declarations.length > 1 ||
+            (symbol.declarations.length == 1 &&
+              symbol.declarations[0].pos > ast.end)
+          ) {
+            // 在AST中找不到上下文声明，证明是Bom,Dom对象
+            const { baseNode, depth, apiName } =
+              that._checkPropertyAccess(node);
+            if (
+              !(
+                depth > 0 &&
+                node.parent.name &&
+                node.parent.name.pos == node.pos &&
+                node.parent.name.end == node.end
+              )
+            ) {
+              // 排除作为属性的场景
+              that._runBrowserPlugins(
+                tsCompiler,
+                baseNode,
+                depth,
+                apiName,
+                filePath,
+                projectName,
+                httpRepo,
+                line
+              );
+            }
+          }
+        }
+      }
     }
+
     walk(ast);
+
+    // 执行afterHook
+    this._runAnalysisPluginsHook(
+      importItems,
+      ast,
+      checker,
+      filePath,
+      projectName,
+      httpRepo,
+      baseLine
+    );
   }
 
   /**
@@ -298,17 +444,13 @@ export default class CodeAnalysis {
     configScanSource.forEach((item) => {
       const entryObj = {
         name: item.name,
-        httpRepo: item.httpRepo,
         parse: [],
       };
       const scanPathArr = item.path;
       let parse = [];
       scanPathArr.forEach((itemScanPath) => {
-        let fileTs = [];
-        if (type === Constant.CODE_FILE_TYPE.TS) {
-          fileTs = scanFileTs(itemScanPath);
-        }
-        parse = parse.concat(fileTs);
+        let files = scanFile(itemScanPath, type);
+        parse = parse.concat(files);
       });
       entryObj.parse = parse;
 
@@ -327,14 +469,16 @@ export default class CodeAnalysis {
     // 扫描所有需要分析的代码文件
     const entrys = this._scanFiles(configScanSource, type);
 
+    // console.log("扫描到的文件", entrys);
+
     entrys.forEach((item) => {
       const parseFileArr = item.parse;
       if (parseFileArr.length > 0) {
-        parseFileArr.forEach((element, index) => {
-          const showPath = item.name + "&" + element;
+        parseFileArr.forEach((itemFileName, index) => {
+          const showPath = item.name + "&" + itemFileName;
           try {
             if (type === Constant.CODE_FILE_TYPE.TS) {
-              const { ast, checker } = parseTs(element);
+              const { ast, checker } = parseTs(itemFileName);
 
               const importItems = this._findImportItems(ast, showPath);
 
@@ -355,8 +499,6 @@ export default class CodeAnalysis {
         });
       }
     });
-
-    fs.writeFile();
   }
 
   //记录诊断日志
@@ -371,9 +513,11 @@ export default class CodeAnalysis {
     // 扫描分析vue
     // 扫描分析TS
     this._scanCode(this._configScanSource, Constant.CODE_FILE_TYPE.TS);
+
+    this.log();
   }
 
   log() {
-    console.log(this.importItemMap);
+    // console.log(this.importItemMap);
   }
 }

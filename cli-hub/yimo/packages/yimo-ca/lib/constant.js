@@ -5,7 +5,7 @@ const Constant = {
   CODE_FILE_TYPE: {
     TS: "ts", // ts包含tsx
     VUE: "vue",
+    JS: "js",
   },
-
 };
 export default Constant;
